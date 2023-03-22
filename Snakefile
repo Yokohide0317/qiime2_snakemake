@@ -70,8 +70,9 @@ def quality_check(_df: pd.DataFrame, _CUT_QUALITY_PERCENT: int, _CUT_QUALITY_LOC
     return trunc_loc
 # }}}
 
+
 rule all:
-    input: f"{THR}/stats-dada2.qza"
+    input: f"{THR}/table-dada2.qzv", f"{THR}/rep-seqs-dada2.qzv", f"{THR}/stats-dada2.qzv"
 
 rule manifest:
     input: "raw-data"
@@ -160,6 +161,7 @@ rule denoise_a:
             )
         ]
 
+    threads: 4
     shell: f"""
             qiime dada2 denoise-paired \
             --i-demultiplexed-seqs {{input}} \
@@ -167,6 +169,37 @@ rule denoise_a:
             --p-trunc-len-r {{params.trunc_len[1]}} \
             --o-table {THR}/table-dada2.qza \
             --o-representative-sequences {THR}/rep-seqs-dada2.qza \
-            --o-denoising-stats {THR}/stats-dada2.qza
+            --o-denoising-stats {THR}/stats-dada2.qza \
+            --p-n-threads {{threads}}
             """
+
+rule denoise_v1:
+    input: f"{THR}/table-dada2.qza"
+    output: f"{THR}/table-dada2.qzv"
+    shell:
+        f"""
+        qiime feature-table summarize \
+             --i-table f"{THR}/table-dada2.qza" \
+             --o-visualization f"{THR}/table-dada2.qzv"
+        """
+
+rule denoise_v2:
+    input: f"{THR}/rep-seqs-dada2.qza"
+    output: f"{THR}/rep-seqs-dada2.qzv"
+    shell:
+        f"""
+        qiime feature-table tabulate-seqs \
+            --i-data f"{THR}/rep-seqs-dada2.qza" \
+            --o-visualization f"{THR}/rep-seqs-dada2.qzv"
+        """
+
+rule denoise_v3:
+    input: f"{THR}/stats-dada2.qza"
+    output: f"{THR}/stats-dada2.qzv"
+    shell:
+        f"""
+        qiime metadata tabulate \
+            --m-input-file f"{THR}/stats-dada2.qza" \
+            --o-visualization f"{THR}/stats-dada2.qzv"
+        """
 # }}}
