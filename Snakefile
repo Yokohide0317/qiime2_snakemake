@@ -179,8 +179,8 @@ rule denoise_v1:
     shell:
         f"""
         qiime feature-table summarize \
-             --i-table f"{THR}/table-dada2.qza" \
-             --o-visualization f"{THR}/table-dada2.qzv"
+             --i-table {THR}/table-dada2.qza \
+             --o-visualization {THR}/table-dada2.qzv
         """
 
 rule denoise_v2:
@@ -189,8 +189,8 @@ rule denoise_v2:
     shell:
         f"""
         qiime feature-table tabulate-seqs \
-            --i-data f"{THR}/rep-seqs-dada2.qza" \
-            --o-visualization f"{THR}/rep-seqs-dada2.qzv"
+            --i-data {THR}/rep-seqs-dada2.qza \
+            --o-visualization {THR}/rep-seqs-dada2.qzv
         """
 
 rule denoise_v3:
@@ -199,7 +199,7 @@ rule denoise_v3:
     shell:
         f"""
         qiime metadata tabulate \
-            --m-input-file f"{THR}/stats-dada2.qza" \
-            --o-visualization f"{THR}/stats-dada2.qzv"
+            --m-input-file {THR}/stats-dada2.qza \
+            --o-visualization {THR}/stats-dada2.qzv
         """
 # }}}
