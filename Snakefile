@@ -145,13 +145,20 @@ rule denoise_a:
     input: f"{TWO}/trimmed-seqs.qza"
     output: f"{THR}/table-dada2.qza", f"{THR}/rep-seqs-dada2.qza", f"{THR}/stats-dada2.qza"
     params:
-        #tsv_path_f = f"{TWO}/output/forward-seven-number-summaries.tsv"
         trunc_len = [
-            quality_check(cut_edge(pd.read_csv(f"{TWO}/output/forward-seven-number-summaries.tsv", sep="\t", index_col=0), _CUT_COUNT_PERCENT=CUT_COUNT_PERCENT), _CUT_QUALITY_PERCENT=CUT_QUALITY_PERCENT, _CUT_QUALITY_LOCATION=CUT_QUALITY_LOCATION),
-            quality_check(cut_edge(pd.read_csv(f"{TWO}/output/reverse-seven-number-summaries.tsv", sep="\t", index_col=0), _CUT_COUNT_PERCENT=CUT_COUNT_PERCENT), _CUT_QUALITY_PERCENT=CUT_QUALITY_PERCENT, _CUT_QUALITY_LOCATION=CUT_QUALITY_LOCATION)
+            quality_check(
+                cut_edge(
+                    pd.read_csv(f"{TWO}/output/forward-seven-number-summaries.tsv", sep="\t", index_col=0)
+                    ,_CUT_COUNT_PERCENT=CUT_COUNT_PERCENT
+                ), _CUT_QUALITY_PERCENT=CUT_QUALITY_PERCENT, _CUT_QUALITY_LOCATION=CUT_QUALITY_LOCATION
+            ),
+            quality_check(
+                cut_edge(
+                    pd.read_csv(f"{TWO}/output/reverse-seven-number-summaries.tsv", sep="\t", index_col=0)
+                    ,_CUT_COUNT_PERCENT=CUT_COUNT_PERCENT
+                ), _CUT_QUALITY_PERCENT=CUT_QUALITY_PERCENT, _CUT_QUALITY_LOCATION=CUT_QUALITY_LOCATION
+            )
         ]
-        #tsv_path_r = f"{TWO}/output/reverse-seven-number-summaries.tsv"
-        #trunc_len_r = quality_check(cut_edge(pd.read_csv(tsv_path_r, sep="\t", index_col=0), CUT_COUNT_PERCENT), CUT_QUALITY_PERCENT, CUT_QUALITY_LOCATION)
 
     shell: f"""
             qiime dada2 denoise-paired \
