@@ -45,7 +45,7 @@ CUT_COUNT_PERCENT = config["CUT_COUNT_PERCENT"]
 CUT_QUALITY_PERCENT = config["CUT_QUALITY_PERCENT"]
 CUT_QUALITY_LOCATION = config["CUT_QUALITY_LOCATION"]
 
-# QCの数値出し
+# {{{ =========== QCの数値出し関数 ===========
 def cut_edge(_df: pd.DataFrame, _CUT_COUNT_PERCENT: float):
     max_count: int = int(_df.loc["count"][0])
 
@@ -68,8 +68,7 @@ def quality_check(_df: pd.DataFrame, _CUT_QUALITY_PERCENT: int, _CUT_QUALITY_LOC
             break
 
     return trunc_loc
-
-
+# }}}
 
 rule all:
     input: f"{THR}/stats-dada2.qza"
