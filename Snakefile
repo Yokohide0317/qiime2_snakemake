@@ -3,6 +3,7 @@ import pandas as pd
 
 configfile: "config.yaml"
 
+# {{{ =========== 変数の定義・準備 ===========
 ONE = "01_data-import"
 TWO = "02_adapter"
 THR = "03_denoise"
@@ -52,6 +53,8 @@ TAXONOMY_DATABASE = config["TAXONOMY_DATABASE"]
 CUTADAPT_CORES = int(config["CUTADAPT_CORES"])
 DADA2_CORES = int(config["DADA2_CORES"])
 TAXONOMY_CORES = int(config["TAXONOMY_CORES"])
+
+# }}}
 
 # {{{ =========== QCの数値出し関数 ===========
 def cut_edge(_df: pd.DataFrame, _CUT_COUNT_PERCENT: float):
