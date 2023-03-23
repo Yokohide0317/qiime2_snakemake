@@ -4,6 +4,11 @@ import pandas as pd
 configfile: "config.yaml"
 
 # {{{ =========== 変数の定義・準備 ===========
+def check_vars(_vars: list):
+    for var in _vars:
+        print(f"{var = }")
+    return True
+
 ONE = "01_data-import"
 TWO = "02_adapter"
 THR = "03_denoise"
@@ -40,19 +45,20 @@ FWD: str = config["FWD"].strip()
 REV: str = config["REV"].strip()
 FWDRC: str = ''.join(list(reversed(FWD.translate(str.maketrans(translateDict)))))
 REVRC: str = ''.join(list(reversed(REV.translate(str.maketrans(translateDict)))))
-
-print(FWDRC)
-print(REVRC)
+check_vars([FWD, REV, FWDRC, REVRC])
 
 CUT_COUNT_PERCENT = config["CUT_COUNT_PERCENT"]
 CUT_QUALITY_PERCENT = config["CUT_QUALITY_PERCENT"]
 CUT_QUALITY_LOCATION = config["CUT_QUALITY_LOCATION"]
+check_vars([CUT_COUNT_PERCENT, CUT_QUALITY_PERCENT, CUT_QUALITY_LOCATION])
 
 TAXONOMY_DATABASE = config["TAXONOMY_DATABASE"]
+check_vars([TAXONOMY_DATABASE])
 
 CUTADAPT_CORES = int(config["CUTADAPT_CORES"])
 DADA2_CORES = int(config["DADA2_CORES"])
 TAXONOMY_CORES = int(config["TAXONOMY_CORES"])
+check_vars([CUTADAPT_CORES, DADA2_CORES, TAXONOMY_CORES])
 
 # }}}
 
