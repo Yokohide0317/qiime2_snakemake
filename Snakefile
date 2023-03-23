@@ -6,6 +6,7 @@ configfile: "config.yaml"
 ONE = "01_data-import"
 TWO = "02_adapter"
 THR = "03_denoise"
+FOR = "04_taxonomy"
 
 translateDict = {
     "A": "T",
@@ -33,6 +34,7 @@ translateDict = {
     "d": "h",
     "b": "v",
 }
+
 FWD: str = config["FWD"].strip()
 REV: str = config["REV"].strip()
 FWDRC: str = ''.join(list(reversed(FWD.translate(str.maketrans(translateDict)))))
@@ -44,6 +46,12 @@ print(REVRC)
 CUT_COUNT_PERCENT = config["CUT_COUNT_PERCENT"]
 CUT_QUALITY_PERCENT = config["CUT_QUALITY_PERCENT"]
 CUT_QUALITY_LOCATION = config["CUT_QUALITY_LOCATION"]
+
+TAXONOMY_DATABASE = config["TAXONOMY_DATABASE"]
+
+CUTADAPT_CORES = int(config["CUTADAPT_CORES"])
+DADA2_CORES = int(config["DADA2_CORES"])
+TAXONOMY_CORES = int(config["TAXONOMY_CORES"])
 
 # {{{ =========== QCの数値出し関数 ===========
 def cut_edge(_df: pd.DataFrame, _CUT_COUNT_PERCENT: float):
@@ -72,7 +80,8 @@ def quality_check(_df: pd.DataFrame, _CUT_QUALITY_PERCENT: int, _CUT_QUALITY_LOC
 
 
 rule all:
-    input: f"{THR}/table-dada2.qzv", f"{THR}/rep-seqs-dada2.qzv", f"{THR}/stats-dada2.qzv"
+    input: f"{FOR}/taxa-bar-plots.qzv"
+
 
 rule manifest:
     input: "raw-data"
@@ -107,6 +116,7 @@ rule import_v:
 rule adapter_a:
     input: f"{ONE}/demux-paired-end.qza"
     output: f"{TWO}/trimmed-seqs.qza"
+    threads: CUTADAPT_CORES
     shell: f"""
             qiime cutadapt trim-paired \
             --i-demultiplexed-sequences {{input}} \
@@ -119,7 +129,8 @@ rule adapter_a:
             --p-match-adapter-wildcards \
             --p-minimum-length 100 \
             --p-discard-untrimmed \
-            --o-trimmed-sequences {{output}}
+            --o-trimmed-sequences {{output}} \
+            --p-cores {{threads}}
             """
 
 rule adapter_v:
@@ -161,7 +172,7 @@ rule denoise_a:
             )
         ]
 
-    threads: 4
+    threads: TAXONOMY_CORES
     shell: f"""
             qiime dada2 denoise-paired \
             --i-demultiplexed-seqs {{input}} \
@@ -202,4 +213,38 @@ rule denoise_v3:
             --m-input-file {THR}/stats-dada2.qza \
             --o-visualization {THR}/stats-dada2.qzv
         """
+# }}}
+
+
+# {{{ =========== 04_taxonomy =============
+rule taxonomy_a:
+    input: f"{THR}/rep-seqs-dada2.qza"
+    output: f"{FOR}/taxonomy.qza"
+    threads: TAXONOMY_CORES
+    shell: f"""
+        qiime feature-classifier classify-sklearn \
+            --i-reads {{input}} \
+            --i-classifier {TAXONOMY_DATABASE} \
+            --o-classification {{output}} \
+            --p-n-jobs {{threads}}
+            """
+
+rule taxonomy_v1:
+    input: f"{FOR}/taxonomy.qza"
+    output: f"{FOR}/taxonomy.qzv"
+    shell: f"""
+        qiime metadata tabulate \
+            --m-input-file {{input}} \
+            --o-visualization {{output}}
+            """
+
+rule taxonomy_v2:
+    input: f"{THR}/table-dada2.qza", f"{FOR}/taxonomy.qza"
+    output: f"{FOR}/taxa-bar-plots.qzv"
+    shell: f"""
+        qiime taxa barplot \
+            --i-table {THR}/table-dada2.qza \
+            --i-taxonomy {FOR}/taxonomy.qza \
+            --o-visualization {{output}}
+            """
 # }}}
