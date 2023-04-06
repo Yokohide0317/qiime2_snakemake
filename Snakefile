@@ -152,7 +152,7 @@ rule adapter_o:
             --input-path {{input}} \
             --output-path {TWO}/output
             """
-# }}}
+# }}}zo
 
 # {{{ =========== 03_denoise =============
 rule denoise_pre:
@@ -174,8 +174,10 @@ rule denoise_pre:
                 ), _CUT_QUALITY_PERCENT=CUT_QUALITY_PERCENT, _CUT_QUALITY_LOCATION=CUT_QUALITY_LOCATION
             )
         ]
-        with open(f"{{output}}", "w") as f:
-            f.write("\n".join(trunc_len))
+        f = open(f"{TWO}/trimmed-param.txt", "w")
+        print(trunc_len[0], file=f)
+        print(trunc_len[1], file=f)
+        f.close()
 
    
 
@@ -185,9 +187,9 @@ rule denoise_a:
     threads: TAXONOMY_CORES
     shell: f"""
             qiime dada2 denoise-paired \
-            --i-demultiplexed-seqs {{input}} \
-            --p-trunc-len-f `cat test.txt | awk 'NR==1 {print}'` \
-            --p-trunc-len-r `cat test.txt | awk 'NR==2 {print}'` \
+            --i-demultiplexed-seqs {TWO}/trimmed-seqs.qza \
+            --p-trunc-len-f `cat {TWO}/trimmed-param.txt | awk 'NR==1'` \
+            --p-trunc-len-r `cat {TWO}/trimmed-param.txt | awk 'NR==2'` \
             --o-table {THR}/table-dada2.qza \
             --o-representative-sequences {THR}/rep-seqs-dada2.qza \
             --o-denoising-stats {THR}/stats-dada2.qza \
