@@ -155,10 +155,11 @@ rule adapter_o:
 # }}}
 
 # {{{ =========== 03_denoise =============
-rule denoise_a:
-    input: f"{TWO}/trimmed-seqs.qza"
-    output: f"{THR}/table-dada2.qza", f"{THR}/rep-seqs-dada2.qza", f"{THR}/stats-dada2.qza"
-    params:
+rule denoise_pre:
+    input: f"{TWO}/output/forward-seven-number-summaries.tsv"
+    output: f"{TWO}/trimmed-param.txt"
+
+    run:
         trunc_len = [
             quality_check(
                 cut_edge(
@@ -173,13 +174,20 @@ rule denoise_a:
                 ), _CUT_QUALITY_PERCENT=CUT_QUALITY_PERCENT, _CUT_QUALITY_LOCATION=CUT_QUALITY_LOCATION
             )
         ]
+        with open(f"{{output}}", "w") as f:
+            f.write("\n".join(trunc_len))
 
+   
+
+rule denoise_a:
+    input: f"{TWO}/trimmed-param.txt"
+    output: f"{THR}/table-dada2.qza", f"{THR}/rep-seqs-dada2.qza", f"{THR}/stats-dada2.qza"
     threads: TAXONOMY_CORES
     shell: f"""
             qiime dada2 denoise-paired \
             --i-demultiplexed-seqs {{input}} \
-            --p-trunc-len-f {{params.trunc_len[0]}} \
-            --p-trunc-len-r {{params.trunc_len[1]}} \
+            --p-trunc-len-f `cat test.txt | awk 'NR==1 {print}'` \
+            --p-trunc-len-r `cat test.txt | awk 'NR==2 {print}'` \
             --o-table {THR}/table-dada2.qza \
             --o-representative-sequences {THR}/rep-seqs-dada2.qza \
             --o-denoising-stats {THR}/stats-dada2.qza \
@@ -216,7 +224,6 @@ rule denoise_v3:
             --o-visualization {THR}/stats-dada2.qzv
         """
 # }}}
-
 
 # {{{ =========== 04_taxonomy =============
 rule taxonomy_a:
