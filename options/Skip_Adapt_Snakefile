@@ -6,7 +6,7 @@ configfile: "config.yaml"
 # {{{ =========== 変数の定義・準備 ===========
 
 ONE = "01_data-import"
-TWO = "02_adapter"
+#TWO = "02_adapter"
 THR = "03_denoise"
 FOR = "04_taxonomy"
 
@@ -37,10 +37,10 @@ translateDict = {
     "b": "v",
 }
 
-FWD: str = config["FWD"].strip()
-REV: str = config["REV"].strip()
-FWDRC: str = ''.join(list(reversed(FWD.translate(str.maketrans(translateDict)))))
-REVRC: str = ''.join(list(reversed(REV.translate(str.maketrans(translateDict)))))
+#FWD: str = config["FWD"].strip()
+#REV: str = config["REV"].strip()
+#FWDRC: str = ''.join(list(reversed(FWD.translate(str.maketrans(translateDict)))))
+#REVRC: str = ''.join(list(reversed(REV.translate(str.maketrans(translateDict)))))
 
 CUT_COUNT_PERCENT = config["CUT_COUNT_PERCENT"]
 CUT_QUALITY_PERCENT = config["CUT_QUALITY_PERCENT"]
@@ -48,7 +48,7 @@ CUT_QUALITY_LOCATION = config["CUT_QUALITY_LOCATION"]
 
 TAXONOMY_DATABASE = config["TAXONOMY_DATABASE"]
 
-CUTADAPT_CORES = int(config["CUTADAPT_CORES"])
+#CUTADAPT_CORES = int(config["CUTADAPT_CORES"])
 DADA2_CORES = int(config["DADA2_CORES"])
 TAXONOMY_CORES = int(config["TAXONOMY_CORES"])
 
@@ -111,69 +111,77 @@ rule import_v:
             --o-visualization {{output}}
             """
 
-# }}}
-
-# {{{ =========== 02_ADAPTER =============
-rule adapter_a:
-    input: f"{ONE}/demux-paired-end.qza"
-    output: f"{TWO}/trimmed-seqs.qza"
-    threads: CUTADAPT_CORES
-    shell: f"""
-            qiime cutadapt trim-paired \
-            --i-demultiplexed-sequences {{input}} \
-            --p-front-f {FWD} \
-            --p-front-r {REV} \
-            --p-adapter-f {FWDRC} \
-            --p-adapter-r {REVRC} \
-            --p-times 10 \
-            --p-match-read-wildcards \
-            --p-match-adapter-wildcards \
-            --p-minimum-length 100 \
-            --p-discard-untrimmed \
-            --o-trimmed-sequences {{output}} \
-            --p-cores {{threads}}
-            """
-
-rule adapter_v:
-    input: f"{TWO}/trimmed-seqs.qza"
-    output: f"{TWO}/trimmed-seqs.qzv"
-    shell: f"""
-            qiime demux summarize \
-            --i-data {{input}} \
-            --o-visualization {{output}}
-            """
-
-rule adapter_o:
-    input: f"{TWO}/trimmed-seqs.qzv"
-    output: f"{TWO}/output/forward-seven-number-summaries.tsv"
+rule import_o:
+    input: f"{ONE}/demux-paired-end.qzv"
+    output: f"{ONE}/output/forward-seven-number-summaries.tsv"
     shell: f"""
             qiime tools export \
             --input-path {{input}} \
-            --output-path {TWO}/output
+            --output-path {ONE}/output
             """
+# }}}
+
+# {{{ =========== 02_ADAPTER =============
+#rule adapter_a:
+#    input: f"{ONE}/demux-paired-end.qza"
+#    output: f"{TWO}/trimmed-seqs.qza"
+#    threads: CUTADAPT_CORES
+#    shell: f"""
+#            qiime cutadapt trim-paired \
+#            --i-demultiplexed-sequences {{input}} \
+#            --p-front-f {FWD} \
+#            --p-front-r {REV} \
+#            --p-adapter-f {FWDRC} \
+#            --p-adapter-r {REVRC} \
+#            --p-times 10 \
+#            --p-match-read-wildcards \
+#            --p-match-adapter-wildcards \
+#            --p-minimum-length 100 \
+#            --p-discard-untrimmed \
+#            --o-trimmed-sequences {{output}} \
+#            --p-cores {{threads}}
+#            """
+#
+#rule adapter_v:
+#    input: f"{TWO}/trimmed-seqs.qza"
+#    output: f"{TWO}/trimmed-seqs.qzv"
+#    shell: f"""
+#            qiime demux summarize \
+#            --i-data {{input}} \
+#            --o-visualization {{output}}
+#            """
+#
+#rule adapter_o:
+#    input: f"{TWO}/trimmed-seqs.qzv"
+#    output: f"{TWO}/output/forward-seven-number-summaries.tsv"
+#    shell: f"""
+#            qiime tools export \
+#            --input-path {{input}} \
+#            --output-path {TWO}/output
+#            """
 # }}}
 
 # {{{ =========== 03_denoise =============
 rule denoise_pre:
-    input: f"{TWO}/output/forward-seven-number-summaries.tsv"
-    output: f"{TWO}/trimmed-param.txt"
+    input: f"{ONE}/output/forward-seven-number-summaries.tsv"
+    output: f"{ONE}/trimmed-param.txt"
 
     run:
         trunc_len = [
             quality_check(
                 cut_edge(
-                    pd.read_csv(f"{TWO}/output/forward-seven-number-summaries.tsv", sep="\t", index_col=0)
+                    pd.read_csv(f"{ONE}/output/forward-seven-number-summaries.tsv", sep="\t", index_col=0)
                     ,_CUT_COUNT_PERCENT=CUT_COUNT_PERCENT
                 ), _CUT_QUALITY_PERCENT=CUT_QUALITY_PERCENT, _CUT_QUALITY_LOCATION=CUT_QUALITY_LOCATION
             ),
             quality_check(
                 cut_edge(
-                    pd.read_csv(f"{TWO}/output/reverse-seven-number-summaries.tsv", sep="\t", index_col=0)
+                    pd.read_csv(f"{ONE}/output/reverse-seven-number-summaries.tsv", sep="\t", index_col=0)
                     ,_CUT_COUNT_PERCENT=CUT_COUNT_PERCENT
                 ), _CUT_QUALITY_PERCENT=CUT_QUALITY_PERCENT, _CUT_QUALITY_LOCATION=CUT_QUALITY_LOCATION
             )
         ]
-        f = open(f"{TWO}/trimmed-param.txt", "w")
+        f = open(f"{ONE}/trimmed-param.txt", "w")
         print(trunc_len[0], file=f)
         print(trunc_len[1], file=f)
         f.close()
@@ -181,14 +189,14 @@ rule denoise_pre:
    
 
 rule denoise_a:
-    input: f"{TWO}/trimmed-param.txt"
+    input: f"{ONE}/trimmed-param.txt", f"{ONE}/demux-paired-end.qza"
     output: f"{THR}/table-dada2.qza", f"{THR}/rep-seqs-dada2.qza", f"{THR}/stats-dada2.qza"
     threads: TAXONOMY_CORES
     shell: f"""
             qiime dada2 denoise-paired \
-            --i-demultiplexed-seqs {TWO}/trimmed-seqs.qza \
-            --p-trunc-len-f `cat {TWO}/trimmed-param.txt | awk 'NR==1'` \
-            --p-trunc-len-r `cat {TWO}/trimmed-param.txt | awk 'NR==2'` \
+            --i-demultiplexed-seqs {ONE}/demux-paired-end.qza \
+            --p-trunc-len-f `cat {ONE}/trimmed-param.txt | awk 'NR==1'` \
+            --p-trunc-len-r `cat {ONE}/trimmed-param.txt | awk 'NR==2'` \
             --o-table {THR}/table-dada2.qza \
             --o-representative-sequences {THR}/rep-seqs-dada2.qza \
             --o-denoising-stats {THR}/stats-dada2.qza \
